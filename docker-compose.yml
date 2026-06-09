@@ -1,0 +1,121 @@
+
+# To run this application, use the following command in the terminal:
+# docker-compose up --build
+# or
+# click the "Run" button in your IDE if it supports Docker Compose.
+# or
+# click the "arrow" next to "Run All Services" or "Run Service" below
+# The above command will do the followings:
+# 1. Build the Docker image for the agent-api service using the Dockerfile in the current directory.
+# 2. Create the container for the agent-api from the image
+# 3. Load environment variables from the .env file and set the specified environment variables
+# 4. Start the application and expose it on port 8000
+# 5. Monitor the health of the application using the defined health check
+# 6. Automatically restart the container if it crashes or stops, unless you explicitly stop it.
+
+# Go to http://localhost:8000/ in your browser to access the application. 
+# Go to http://localhost:8000/docs to access the API documentation. (This is a FastAPI feature 
+# that automatically generates interactive API docs based on the defined endpoints and schemas.)
+
+# Docker Compose file for the Agent API application
+# This file defines the services, networks, and volumes for the application. It allows you to run 
+# the application using Docker Compose. In this case, we have a single service called 'agent-api' 
+# which builds the Docker image from the Dockerfile in the current directory. The service exposes 
+# port 8000, sets environment variables, and includes a health check to ensure the service is running 
+# properly.
+
+# Docker Compose reads this file and creates the container accordingly.
+
+# "Build my API application from the Dockerfile in the current directory, 
+#run it on port 8000, load environment variables, monitor its health, 
+# and automatically restart it if it crashes.
+
+# services: is the top-level section that defines the different services (containers) 
+# that make up the application. For example:
+# agent-api: is the name of the service. You can have multiple services defined here, 
+# each with its own configuration.
+# database: is another example of a service that could be defined in this section.
+# redis: is yet another example of a service that could be defined in this section.
+
+# agent-api: is the name of the service we are defining. This is the name that will be 
+# used to refer to this service in other parts of the Docker Compose file, such as when 
+# defining networks or volumes.
+
+# build: . tells Docker Compose to build the Docker image for this service using the Dockerfile 
+# located in the current directory (indicated by the dot). This means that when you run
+# docker-compose up --build, Docker Compose will build the image before starting the container.
+# Equivalent manual command: docker build -t agent-api .
+
+# ports: defines the port mapping between the host machine and the container. In this case,
+# '8000:8000' means that port 8000 on the host machine will be forwarded to port 8000 in the 
+# container. This allows you to access the application running inside the container from 
+# your host machine.
+# Format: 'host_port:container_port'
+
+# Without the mapping:
+# Browser -> localhost:8000
+
+# With the mapping:
+# Browser -> localhost:8000 -> Container's port 8000
+
+# env_file: specifies a file that contains environment variables to be passed to the container. 
+# In this case, it points to a file named .env in the current directory. The environment 
+# variables defined in this file will be loaded and available to the application running 
+# inside the container.
+
+# environment: allows you to explicitly set environment variables directly in the Docker 
+# Compose file. In this case, we are setting two environment variables: APP_ENV and 
+# LOG_LEVEL. These variables will be available to the application running inside the container.
+
+# healthcheck: defines a health check for the service. This is used to determine if the
+# service is running properly. In this case, we are using a simple curl command to check if
+# the /health endpoint of the application is responding. The health check will be performed
+# every 30 seconds, with a timeout of 10 seconds, and it will retry up to 3 times before
+# considering the service unhealthy.
+
+# -f: tells curl to fail silently on server errors (HTTP status codes 400 and above).
+
+# restart: unless-stopped is a policy that tells Docker to automatically restart the container
+# if it crashes or stops for any reason, unless you explicitly stop it. This helps ensure
+# that your application remains available even if it encounters issues.
+
+# To specify the image name and tag for the service, you can use the image field instead of 
+# build. For example:
+# agent-api:
+#   image: agent-api:1.0
+# This would tell Docker Compose to use the agent-api image with the tag 1.0 
+# Without the name and tag, Docker Compose will generate a default name based on the directory 
+# name and service name, such as lang-prod-api-jsm_agent-api.
+
+# To specify a custom name for the container, you can use the container_name field. 
+# For example:
+# agent-api:
+
+# Many teams don't use container_name because it can cause conflicts if you have multiple 
+# instances of the same service running. Docker Compose automatically generates unique 
+# names for containers based on the project name and service name.
+# For example: 
+#    docker compose up --scale agent-api=3
+# This would create three instances of the agent-api service, and Docker Compose would 
+# generate unique names for each container, such as:
+#   lang-prod-api-jsm_agent-api_1
+#   lang-prod-api-jsm_agent-api_2 
+#   lang-prod-api-jsm_agent-api_3
+
+# @format
+services:
+  agent-api:
+    build: .
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped

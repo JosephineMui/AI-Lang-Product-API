@@ -1,0 +1,93 @@
+
+# render.yaml — Infrastructure as Code for Render
+# Render is a cloud platform that allows you to deploy and manage applications easily. This YAML 
+# file defines the configuration for deploying our API application on Render. It specifies the 
+# service type, runtime, region, build and start commands, environment variables, health check path, 
+# and auto-deployment settings.
+
+# This render.yaml file is the Render equivalent of a docker-compose.yml file.
+# Instead of telling Docker how to run containers locally, it tells the cloud platform Render how 
+# to deploy and run your application.
+
+# The services section defines the different services (applications) that you want to deploy. In this 
+# case, we have a single service called 'production-langgraph-api' which is a web application that 
+# runs on Python. We specify the region (Oregon), the build command to install dependencies, the 
+# start command to run the application, and various environment variables that the application needs 
+# to function properly.
+
+# region specifies where your application will be hosted. Choosing a region close to your users can help 
+# reduce latency and improve performance. In this case, we are choosing the Oregon region.
+
+# plan specifies the pricing tier for your service. The 'free' plan allows you to deploy applications 
+# without incurring costs, but it may have limitations on resources and features compared to paid plans.
+# Limitations: Lower resource limits (CPU, memory), limited number of services, no custom domains, and no SSL support.
+# For production applications, you may want to consider upgrading to a paid plan for better performance and features.
+# For example, the 'starter' plan offers more resources and features compared to the 'free' plan, such as increased 
+# CPU and memory limits, support for custom domains, and SSL certificates. The 'standard' and 'pro' plans offer even 
+# more resources and features for larger applications.
+
+# buildCommand is the command that Render will run to build your application. In this case, we are using pip to install 
+# the dependencies for the application.
+# uv sync --frozen --no-dev is a command from the uv tool that installs dependencies in a way that ensures the exact 
+# versions specified in the lock file are used, without including any development dependencies.
+
+# startCommand is the command that Render will run to start your application. In this case, we are using uvicorn to run
+# the FastAPI application defined in app.main:app. The --host 0.0.0.0 option makes the application accessible externally, 
+# and --port $PORT specifies the port to listen on.
+
+# --port $PORT is important because Render assigns a dynamic port to your application, and using $PORT ensures that 
+# your application listens on the correct port provided by Render.
+
+# envVars is a list of environment variables that will be set for your application. These variables can be used to 
+# configure various aspects of your application, such as the Python version, application environment, logging level, 
+# rate limiting, caching, model selection, and API keys. Some environment variables are marked with sync: false, 
+# which means Render will NOT read this value from Git. They must be set manually in the Render dashboard and 
+# should not be committed to version control for security reasons.
+
+# healthCheckPath is the endpoint that Render will use to check if your application is healthy and running properly. 
+# Render will periodically send requests to this endpoint, and if it receives a successful response, it considers 
+# the application healthy. If the health check fails, Render can take actions such as restarting the application.
+
+# autoDeploy: true means that Render will automatically deploy your application whenever you push changes to the 
+# connected Git repository. Whenever code is pushed to the main branch (or the branch you have configured), Render 
+# will trigger a new deployment. Render automatically detects changes in the repository and: 
+# 1. Pulls the latest code from the repository.
+# 2. Runs the buildCommand to build the application.
+# 3. If the build is successful, it runs the startCommand to start the application.
+# 4. If the deployment is successful, the new version of the application will be live and accessible to users.
+
+services:
+  - type: web
+    name: production-langgraph-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RATE_LIMIT
+        value: "20/minute"
+      - key: CACHE_TTL_SECONDS
+        value: "300"
+      - key: MAX_RETRIES
+        value: "3"
+      - key: PRIMARY_MODEL
+        value: gpt-4o-mini
+      - key: FALLBACK_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false  # Must be set manually — NEVER commit secrets
+      - key: LANGCHAIN_API_KEY
+        sync: false  # Must be set manually
+      - key: LANGCHAIN_TRACING_V2
+        value: "true"
+      - key: LANGCHAIN_PROJECT
+        value: production-api
+    healthCheckPath: /health
+    autoDeploy: true
