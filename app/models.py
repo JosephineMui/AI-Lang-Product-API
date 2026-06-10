@@ -52,7 +52,7 @@ class HealthResponse(BaseModel):
 
     status: str = "healthy" # Default to "healthy", but can be set to "unhealthy" if checks fail
     environment: str        # The application environment (e.g., development, staging, production)
-    version: str = "1.1.0"  # Application version, can be set from environment variable or hardcoded
+    version: str = "1.2.0"  # Application version, can be set from environment variable or hardcoded
     checks: dict = {}       # A dictionary to hold the results of various health checks (e.g., database connectivity, LLM availability).
 
 
